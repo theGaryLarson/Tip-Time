@@ -74,16 +74,17 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun TipTimeLayout() {
-    var amountInput by remember { mutableStateOf("0") }
+    var amountInput by remember { mutableStateOf("") }
     var tipInput by remember { mutableStateOf( "") }
-    var splitBill by remember { mutableStateOf("1") }
+    var splitCount by remember { mutableStateOf("") }
     var roundUp by remember { mutableStateOf(false) }
 
     val amount = amountInput.toDoubleOrNull() ?: 0.0
     val tipPercent = tipInput.toDoubleOrNull() ?: 0.0
-    val splitNumberOfWays = splitBill ?: 1
+    val peopleCount = splitCount.toIntOrNull() ?: 0
 
     val tip = calculateTip(amount , tipPercent, roundUp)
+    val splitTotal = calculatePersonAmount(peopleCount, amount, tipPercent, roundUp)
 
     Column(
         modifier = Modifier
@@ -92,6 +93,20 @@ fun TipTimeLayout() {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+
+        EditNumberField(
+            value = splitCount,
+            onValueChange= {splitCount = it},
+            label = R.string.split_count,
+            leadingIcon = R.drawable.percent, //fixme: use person icon from google materials
+            keyboardOptions = KeyboardOptions.Default.copy(
+                keyboardType = KeyboardType.Number,  // types: email, url, password, etc.
+                imeAction = ImeAction.Next
+            ),
+            modifier= Modifier
+                .padding(bottom = 32.dp)
+                .fillMaxWidth()
+        )
         Text(
             text = stringResource(R.string.calculate_tip),
             modifier = Modifier
@@ -129,20 +144,15 @@ fun TipTimeLayout() {
             onRoundUpChanged = { roundUp = it },
             modifier = Modifier.padding(bottom = 32.dp)
         )
-
-//        EditNumberField(
-//            value = tipInput,
-//            onValueChange = {tipInput = it},
-//            label = R.string.how_was_the_service,
-//            modifier = Modifier
-//                .padding(bottom = 32.dp)
-//                .fillMaxWidth())
-
         Text(
             text = stringResource(R.string.tip_amount, tip),
             style = MaterialTheme.typography.displaySmall
         )
-        Spacer(modifier = Modifier.height(150.dp))
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = stringResource(R.string.individual_amount, splitTotal),
+            style = MaterialTheme.typography.displaySmall
+        )
     }
 }
 
@@ -202,6 +212,19 @@ private fun calculateTip(
     if (roundUp)
         tip = kotlin.math.ceil(tip)
     return NumberFormat.getCurrencyInstance().format(tip)
+}
+
+private fun calculatePersonAmount(
+    peopleCount: Int,
+    amount: Double,
+    tipPercent: Double,
+    roundUp: Boolean
+): String{
+    var tip = tipPercent / 100 * amount
+    if (roundUp)
+        tip = kotlin.math.ceil(tip)
+    val singleTotal = (amount + tip) / peopleCount
+    return NumberFormat.getCurrencyInstance().format(singleTotal)
 }
 
 @Preview(showBackground = true)
